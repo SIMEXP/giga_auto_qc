@@ -1,4 +1,7 @@
-# giga-auto-qc
-Automatic quality control for fMRIPrep outputs aimed for large dataset
+# Giga automatic quality control
 
-This project is adapted from [ccna-qc](https://github.com/ccna-biomarkers/ccna_qc)
+Automatic quality control for fMRIPrep outputs aimed for large dataset.
+
+This is a Python project packaged according to [Contemporary Python Packaging - 2023][].
+
+[Contemporary Python Packaging - 2023]: https://effigies.gitlab.io/posts/python-packaging-2023/
