@@ -43,7 +43,7 @@ tests = ["giga_auto_qc[test]"]
 
 
 [project.urls]
-"Homepage" = "https://github.com/htwangtw/giga_auto_qc"
+"Homepage" = "https://github.com/simexp/giga_auto_qc"
 
 [tool.hatch.version]
 source = "vcs"
