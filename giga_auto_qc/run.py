@@ -10,7 +10,7 @@ def main():
         formatter_class=argparse.RawTextHelpFormatter,
         description=(
             "Quality control metric in one tsv file for fmriprep "
-            "processed dataset."
+            "processed datasets."
         ),
     )
     parser.add_argument(
