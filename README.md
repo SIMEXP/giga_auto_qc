@@ -3,8 +3,6 @@
 
 Automatic quality control for fMRIPrep outputs aimed for large datasets.
 
-This is a Python project packaged according to [Contemporary Python Packaging - 2023][].
-
 ## Description
 
 Quality control for preprocessed fMRI data is important for the subsequent data analysis.
@@ -83,6 +81,9 @@ optional arguments:
 ```
 
 ## Acknowledgements
+
+This is a Python project packaged according to [Contemporary Python Packaging - 2023][].
+
 We acknowledge all the BIDS-Apps team
 https://github.com/orgs/BIDS-Apps/people
 
