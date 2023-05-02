@@ -37,6 +37,13 @@ Users can use the report as is to filter subjects, or perform further visual ins
 ## How to report errors
 
 Please use the GitHub issue to report errors.
+Check out the open issues first to see if we're already working on it. 
+If not, open up a new issue and we will get back to you when we can!
+
+## How to contribute
+
+You can review open issues that we are looking for help with. 
+If you submit a new pull request please be as detailed as possible in your comments. 
 
 ## Installation
 
