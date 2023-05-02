@@ -82,4 +82,8 @@ optional arguments:
 
 ```
 
+## Acknowledgements
+We acknowledge all the BIDS-Apps team
+https://github.com/orgs/BIDS-Apps/people
+
 [Contemporary Python Packaging - 2023]: https://effigies.gitlab.io/posts/python-packaging-2023/
