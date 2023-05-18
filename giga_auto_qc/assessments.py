@@ -12,13 +12,6 @@ import templateflow
 from bids import BIDSLayout
 
 template = "MNI152NLin2009cAsym"
-qulaity_control_standards = {
-    "mean_fd": 0.55,
-    "scrubbing_fd": 0.2,
-    "proportion_kept": 0.5,
-    "anatomical_dice": 0.99,
-    "functional_dice": 0.89,
-}
 
 
 def get_reference_mask(
@@ -81,6 +74,7 @@ def calculate_functional_metrics(
     task: List[str],
     fmriprep_bids_layout: BIDSLayout,
     reference_masks: dict,
+    qulaity_control_standards: dict,
 ) -> pd.DataFrame:
     """
     Calculate functional scan quality metrics:
@@ -170,6 +164,7 @@ def calculate_anat_metrics(
     subjects: List[str],
     fmriprep_bids_layout: BIDSLayout,
     reference_masks: dict,
+    qulaity_control_standards: dict,
 ) -> pd.DataFrame:
     """
     Calculate the anatomical dice score.
@@ -218,7 +213,8 @@ def calculate_anat_metrics(
 
 
 def quality_accessments(
-    functional_metrics: pd.DataFrame, anatomical_metrics: pd.DataFrame
+    functional_metrics: pd.DataFrame, anatomical_metrics: pd.DataFrame,
+    qulaity_control_standards: dict,
 ) -> pd.DataFrame:
     """
     Automatic quality accessments.
@@ -265,7 +261,7 @@ def quality_accessments(
     metrics = pd.concat((functional_metrics, anat_qc), axis=1)
     metrics["pass_all_qc"] = metrics["pass_func_qc"] * metrics["pass_anat_qc"]
     print(
-        f"{int(metrics['pass_all_qc'].sum())} out of {metrics.shape[0]} "
+        f"{metrics['pass_all_qc'].astype(int).sum()} out of {metrics.shape[0]} "
         "functional scans passed automatic QC."
     )
     return metrics

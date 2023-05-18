@@ -54,6 +54,15 @@ def main():
         "it does not include 'task-'). ",
         nargs="+",
     )
+    parser.add_argument(
+        "--quality_control_parameters",
+        type=Path,
+        help="The path to customised quality control parameters. When no file "
+        "is supplied, we will filter with the default parameters. It should "
+        "include the following fields: mean_fd (default=0.55), scrubbing_fd "
+        "(default=0.2), proportion_kept (default=0.5), anatomical_dice "
+        "(default=0.99), functional_dice (default=0.89)",
+    )
     args = parser.parse_args()
 
     workflow(args)

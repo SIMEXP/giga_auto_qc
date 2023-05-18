@@ -1,0 +1,7 @@
+{
+    "mean_fd": 0.55,
+    "scrubbing_fd": 0.2,
+    "proportion_kept": 0.5,
+    "anatomical_dice": 0.97,
+    "functional_dicfe": 0.89
+}
