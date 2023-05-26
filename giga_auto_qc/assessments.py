@@ -19,6 +19,7 @@ def get_reference_mask(
     subjects: List[str],
     task: List[str],
     fmriprep_bids_layout: BIDSLayout,
+    verbose: int = 1,
 ) -> dict:
     """
     Find the correct target mask for dice coefficient.
@@ -38,6 +39,9 @@ def get_reference_mask(
     fmriprep_bids_layout :
         BIDS layout of a fMRIPrep derivative.
 
+    verbose :
+        Level of verbosity.
+
     Returns
     -------
 
@@ -48,8 +52,12 @@ def get_reference_mask(
         [template], desc="brain", suffix="mask", resolution="01"
     )
     reference_masks = {"anat": template_mask}
+    if verbose > 0:
+        print("Retrieved anatomical reference mask")
+
     if analysis_level == "group" and len(subjects) > 1:
-        print("Create dataset level functional brain mask")
+        if verbose > 0:
+            print("Create dataset level functional brain mask")
         # create a group level mask
         func_filter = {
             "subject": subjects,
@@ -63,8 +71,14 @@ def get_reference_mask(
         func_masks = fmriprep_bids_layout.get(
             **func_filter, return_type="file"
         )
+        if verbose > 1:
+            print(f"Got reference template {template}.")
         reference_masks["func"] = intersect_masks(func_masks, threshold=0.5)
+        if verbose > 1:
+            print("Customised reference mask generated.")
     else:
+        if verbose > 0:
+            print("Use standard template as functional scan reference.")
         reference_masks["func"] = template_mask
     return reference_masks
 
@@ -75,6 +89,7 @@ def calculate_functional_metrics(
     fmriprep_bids_layout: BIDSLayout,
     reference_masks: dict,
     qulaity_control_standards: dict,
+    verbose: int = 1,
 ) -> pd.DataFrame:
     """
     Calculate functional scan quality metrics:
@@ -116,8 +131,8 @@ def calculate_functional_metrics(
     confounds = fmriprep_bids_layout.get(
         **confounds_filter, return_type="file"
     )
-
-    print("Motion...")
+    if verbose > 0:
+        print("Calculate motion QC...")
     for confound_file in tqdm(confounds):
         # compute fds score
         framewise_displacements = pd.read_csv(confound_file, sep="\t")[
@@ -148,7 +163,8 @@ def calculate_functional_metrics(
         "datatype": "func",
     }
     func_images = fmriprep_bids_layout.get(**func_filter, return_type="file")
-    print("Functional dice...")
+    if verbose > 0:
+        print("Calculate EPI mask dice...")
     for func_file in tqdm(func_images):
         identifier = Path(func_file).name.split(f"_space-{template}")[0]
         functional_dice = _dice_coefficient(func_file, reference_masks["func"])
@@ -165,6 +181,7 @@ def calculate_anat_metrics(
     fmriprep_bids_layout: BIDSLayout,
     reference_masks: dict,
     qulaity_control_standards: dict,
+    verbose: int = 1,
 ) -> pd.DataFrame:
     """
     Calculate the anatomical dice score.
@@ -185,7 +202,8 @@ def calculate_anat_metrics(
     pandas.DataFrame
         Anatomical scan dice score scan quality metrics.
     """
-    print("Calculate the anatomical dice score.")
+    if verbose > 0:
+        print("Calculate the anatomical dice score.")
     metrics = {}
     for sub in tqdm(subjects):
         anat_filter = {
@@ -261,8 +279,8 @@ def quality_accessments(
     metrics = pd.concat((functional_metrics, anat_qc), axis=1)
     metrics["pass_all_qc"] = metrics["pass_func_qc"] * metrics["pass_anat_qc"]
     print(
-        f"{metrics['pass_all_qc'].astype(int).sum()} out of {metrics.shape[0]} "
-        "functional scans passed automatic QC."
+        f"{metrics['pass_all_qc'].astype(int).sum()} out of "
+        f"{metrics.shape[0]} functional scans passed automatic QC."
     )
     return metrics
 

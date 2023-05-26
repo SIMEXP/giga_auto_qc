@@ -63,6 +63,17 @@ def main():
         "(default=0.2), proportion_kept (default=0.5), anatomical_dice "
         "(default=0.99), functional_dice (default=0.89)",
     )
+    parser.add_argument(
+        "--reindex-bids",
+        help="Reindex BIDS data set, even if layout has already been created.",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--verbose",
+        help="Verbrosity. 0 for minimal, 1 for more details. Default to 1.",
+        type=int,
+        default=1,
+    )
     args = parser.parse_args()
 
     workflow(args)

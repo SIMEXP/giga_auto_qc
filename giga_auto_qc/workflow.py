@@ -51,6 +51,7 @@ def workflow(args):
         database_path=bids_dir,
         validate=False,
         derivatives=True,
+        reset_database=args.reindex_bids,
     )
     # check output path
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -61,12 +62,12 @@ def workflow(args):
     tasks = args.task if args.task else fmriprep_bids_layout.get_tasks()
 
     reference_masks = assessments.get_reference_mask(
-        analysis_level, subjects, tasks, fmriprep_bids_layout
+        analysis_level, subjects, tasks, fmriprep_bids_layout, args.verbose
     )
 
     anatomical_metrics = assessments.calculate_anat_metrics(
         subjects, fmriprep_bids_layout, reference_masks,
-        quality_control_parameters
+        quality_control_parameters, args.verbose
     )
 
     for task in tasks:
@@ -79,7 +80,8 @@ def workflow(args):
             quality_control_parameters
         )
         metrics = assessments.quality_accessments(
-            metrics, anatomical_metrics, quality_control_parameters
+            metrics, anatomical_metrics, quality_control_parameters,
+            args.verbose,
         )
         # split the index into sub - ses - task - run
         metrics = assessments.parse_scan_information(metrics)
