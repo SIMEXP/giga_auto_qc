@@ -37,8 +37,9 @@ def workflow(args):
             quality_control_parameters = json.load(f)
     print(f"Quality control parameters: {quality_control_parameters}")
 
-    if set(quality_control_parameters.keys()) != \
-        set(DEFAULT_QC_STANDARD.keys()):
+    if set(quality_control_parameters.keys()) != set(
+        DEFAULT_QC_STANDARD.keys()
+    ):
         raise ValueError(
             "The supplied quality control parameter file "
             f"{args.quality_control_parameters} should contain the following"
@@ -66,8 +67,11 @@ def workflow(args):
     )
 
     anatomical_metrics = assessments.calculate_anat_metrics(
-        subjects, fmriprep_bids_layout, reference_masks,
-        quality_control_parameters, args.verbose
+        subjects,
+        fmriprep_bids_layout,
+        reference_masks,
+        quality_control_parameters,
+        args.verbose,
     )
 
     for task in tasks:
@@ -77,11 +81,11 @@ def workflow(args):
             task,
             fmriprep_bids_layout,
             reference_masks,
-            quality_control_parameters
+            quality_control_parameters,
+            args.verbose,
         )
         metrics = assessments.quality_accessments(
-            metrics, anatomical_metrics, quality_control_parameters,
-            args.verbose,
+            metrics, anatomical_metrics, quality_control_parameters
         )
         # split the index into sub - ses - task - run
         metrics = assessments.parse_scan_information(metrics)
