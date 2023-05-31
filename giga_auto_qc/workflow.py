@@ -1,10 +1,7 @@
-from typing import List
 import json
-from pathlib import Path
-
 from bids import BIDSLayout
 
-from giga_auto_qc import assessments
+from giga_auto_qc import assessments, utils
 
 
 DEFAULT_QC_STANDARD = {
@@ -37,8 +34,9 @@ def workflow(args):
             quality_control_parameters = json.load(f)
     print(f"Quality control parameters: {quality_control_parameters}")
 
-    if set(quality_control_parameters.keys()) != \
-        set(DEFAULT_QC_STANDARD.keys()):
+    if set(quality_control_parameters.keys()) != set(
+        DEFAULT_QC_STANDARD.keys()
+    ):
         raise ValueError(
             "The supplied quality control parameter file "
             f"{args.quality_control_parameters} should contain the following"
@@ -51,22 +49,26 @@ def workflow(args):
         database_path=bids_dir,
         validate=False,
         derivatives=True,
+        reset_database=args.reindex_bids,
     )
     # check output path
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # get subject list
-    subjects = _get_subject_lists(participant_label, bids_dir)
+    subjects = utils.get_subject_lists(participant_label, bids_dir)
     # infer task for bids search
     tasks = args.task if args.task else fmriprep_bids_layout.get_tasks()
 
     reference_masks = assessments.get_reference_mask(
-        analysis_level, subjects, tasks, fmriprep_bids_layout
+        analysis_level, subjects, tasks, fmriprep_bids_layout, args.verbose
     )
 
     anatomical_metrics = assessments.calculate_anat_metrics(
-        subjects, fmriprep_bids_layout, reference_masks,
-        quality_control_parameters
+        subjects,
+        fmriprep_bids_layout,
+        reference_masks,
+        quality_control_parameters,
+        args.verbose,
     )
 
     for task in tasks:
@@ -76,26 +78,12 @@ def workflow(args):
             task,
             fmriprep_bids_layout,
             reference_masks,
-            quality_control_parameters
+            quality_control_parameters,
+            args.verbose,
         )
         metrics = assessments.quality_accessments(
             metrics, anatomical_metrics, quality_control_parameters
         )
         # split the index into sub - ses - task - run
-        metrics = assessments.parse_scan_information(metrics)
+        metrics = utils.parse_scan_information(metrics)
         metrics.to_csv(output_dir / f"task-{task}_report.tsv", sep="\t")
-
-
-def _get_subject_lists(
-    participant_label: List[str], bids_dir: Path
-) -> List[str]:
-    """Parse subject list from user options"""
-    if participant_label:
-        return participant_label
-    # get all subjects, this is quicker than bids...
-    subject_dirs = bids_dir.glob("sub-*/")
-    return [
-        subject_dir.name.split("-")[-1]
-        for subject_dir in subject_dirs
-        if subject_dir.is_dir()
-    ]

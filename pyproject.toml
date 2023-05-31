@@ -20,8 +20,8 @@ classifiers = [
 ]
 dependencies = [
   "nilearn",
-  "pybids<0.16.0",
-  "templateflow<23.0.0",
+  "pybids >=0.15.0, <0.16.0",
+  "templateflow < 23.0.0",
 ]
 dynamic = ["version"]
 
@@ -56,6 +56,9 @@ exclude = [".git_archival.txt"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["giga_auto_qc"]
+exclude = [
+    "giga_auto_qc/data/test_data",
+]
 
 [tool.black]
 target-version = ['py38']

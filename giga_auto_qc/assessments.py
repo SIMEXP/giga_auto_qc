@@ -5,13 +5,15 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
+from nibabel import Nifti1Image
+
 from nilearn.image import load_img, resample_to_img
 from nilearn.masking import intersect_masks
 
 import templateflow
 from bids import BIDSLayout
 
-template = "MNI152NLin2009cAsym"
+TEMPLATE = "MNI152NLin2009cAsym"
 
 
 def get_reference_mask(
@@ -19,6 +21,7 @@ def get_reference_mask(
     subjects: List[str],
     task: List[str],
     fmriprep_bids_layout: BIDSLayout,
+    verbose: int = 1,
 ) -> dict:
     """
     Find the correct target mask for dice coefficient.
@@ -38,6 +41,9 @@ def get_reference_mask(
     fmriprep_bids_layout :
         BIDS layout of a fMRIPrep derivative.
 
+    verbose :
+        Level of verbosity.
+
     Returns
     -------
 
@@ -45,16 +51,20 @@ def get_reference_mask(
         Reference brain masks for anatomical and functional scans.
     """
     template_mask = templateflow.api.get(
-        [template], desc="brain", suffix="mask", resolution="01"
+        [TEMPLATE], desc="brain", suffix="mask", resolution="01"
     )
     reference_masks = {"anat": template_mask}
+    if verbose > 0:
+        print("Retrieved anatomical reference mask")
+
     if analysis_level == "group" and len(subjects) > 1:
-        print("Create dataset level functional brain mask")
+        if verbose > 0:
+            print("Create dataset level functional brain mask")
         # create a group level mask
         func_filter = {
             "subject": subjects,
             "task": task,
-            "space": template,
+            "space": TEMPLATE,
             "desc": ["brain"],
             "suffix": ["mask"],
             "extension": "nii.gz",
@@ -63,8 +73,14 @@ def get_reference_mask(
         func_masks = fmriprep_bids_layout.get(
             **func_filter, return_type="file"
         )
+        if verbose > 1:
+            print(f"Got reference template {TEMPLATE}.")
         reference_masks["func"] = intersect_masks(func_masks, threshold=0.5)
+        if verbose > 1:
+            print("Customised reference mask generated.")
     else:
+        if verbose > 0:
+            print("Use standard template as functional scan reference.")
         reference_masks["func"] = template_mask
     return reference_masks
 
@@ -75,6 +91,7 @@ def calculate_functional_metrics(
     fmriprep_bids_layout: BIDSLayout,
     reference_masks: dict,
     qulaity_control_standards: dict,
+    verbose: int = 1,
 ) -> pd.DataFrame:
     """
     Calculate functional scan quality metrics:
@@ -116,8 +133,8 @@ def calculate_functional_metrics(
     confounds = fmriprep_bids_layout.get(
         **confounds_filter, return_type="file"
     )
-
-    print("Motion...")
+    if verbose > 0:
+        print("Calculate motion QC...")
     for confound_file in tqdm(confounds):
         # compute fds score
         framewise_displacements = pd.read_csv(confound_file, sep="\t")[
@@ -141,16 +158,17 @@ def calculate_functional_metrics(
     func_filter = {
         "subject": subjects,
         "task": task,
-        "space": template,
+        "space": TEMPLATE,
         "desc": ["brain"],
         "suffix": ["mask"],
         "extension": "nii.gz",
         "datatype": "func",
     }
     func_images = fmriprep_bids_layout.get(**func_filter, return_type="file")
-    print("Functional dice...")
+    if verbose > 0:
+        print("Calculate EPI mask dice...")
     for func_file in tqdm(func_images):
-        identifier = Path(func_file).name.split(f"_space-{template}")[0]
+        identifier = Path(func_file).name.split(f"_space-{TEMPLATE}")[0]
         functional_dice = _dice_coefficient(func_file, reference_masks["func"])
         if identifier in metrics:
             metrics[identifier].update({"functional_dice": functional_dice})
@@ -165,6 +183,7 @@ def calculate_anat_metrics(
     fmriprep_bids_layout: BIDSLayout,
     reference_masks: dict,
     qulaity_control_standards: dict,
+    verbose: int = 1,
 ) -> pd.DataFrame:
     """
     Calculate the anatomical dice score.
@@ -185,12 +204,13 @@ def calculate_anat_metrics(
     pandas.DataFrame
         Anatomical scan dice score scan quality metrics.
     """
-    print("Calculate the anatomical dice score.")
+    if verbose > 0:
+        print("Calculate the anatomical dice score.")
     metrics = {}
     for sub in tqdm(subjects):
         anat_filter = {
             "subject": sub,
-            "space": template,
+            "space": TEMPLATE,
             "desc": ["brain"],
             "suffix": ["mask"],
             "extension": "nii.gz",
@@ -213,7 +233,8 @@ def calculate_anat_metrics(
 
 
 def quality_accessments(
-    functional_metrics: pd.DataFrame, anatomical_metrics: pd.DataFrame,
+    functional_metrics: pd.DataFrame,
+    anatomical_metrics: pd.DataFrame,
     qulaity_control_standards: dict,
 ) -> pd.DataFrame:
     """
@@ -261,49 +282,33 @@ def quality_accessments(
     metrics = pd.concat((functional_metrics, anat_qc), axis=1)
     metrics["pass_all_qc"] = metrics["pass_func_qc"] * metrics["pass_anat_qc"]
     print(
-        f"{metrics['pass_all_qc'].astype(int).sum()} out of {metrics.shape[0]} "
-        "functional scans passed automatic QC."
+        f"{metrics['pass_all_qc'].astype(int).sum()} out of "
+        f"{metrics.shape[0]} functional scans passed automatic QC."
     )
-    return metrics
-
-
-def parse_scan_information(metrics: pd.DataFrame) -> pd.DataFrame:
-    """
-    Parse the identifier into BIDS entities: subject, session, task, run.
-    If session and run are not present, the information will not be parsed.
-
-    Parameters
-    ----------
-
-    metrics:
-        Quality assessment output with identifier as index.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Quality assessment with BIDS entity separated.
-    """
-    metrics.index.name = "identifier"
-    examplar = metrics.index[0].split("_")
-    headers = [e.split("-")[0] for e in examplar]
-    identifiers = pd.DataFrame(
-        metrics.index.tolist(), index=metrics.index, columns=["identifier"]
-    )
-    identifiers[headers] = identifiers["identifier"].str.split(
-        "_", expand=True
-    )
-    identifiers = identifiers.drop("identifier", axis=1)
-    for h in headers:
-        identifiers[h] = identifiers[h].str.replace(f"{h}-", "")
-    identifiers = identifiers.rename(columns={"sub": "participant_id"})
-    metrics = pd.concat((identifiers, metrics), axis=1)
     return metrics
 
 
 def _dice_coefficient(
-    processed_img: Union[str, Path], template_mask: Union[str, Path]
+    processed_img: Union[str, Path, Nifti1Image],
+    template_mask: Union[str, Path, Nifti1Image],
 ) -> np.array:
-    """Compute the Sørensen-dice coefficient between two n-d volumes."""
+    """
+    Compute the Sørensen-dice coefficient between two n-d volumes.
+
+    Parameters
+    ----------
+
+    processed_img:
+        Path to the processed structural or functional mask from fMRIPrep.
+
+    template_mask:
+        Path or nifti image object of the reference template.
+
+    Return
+    ------
+    numpy.array
+        The dice coefficient.
+    """
     # make sure the inputs are 3d
     processed_img = load_img(processed_img)
     template_mask = load_img(template_mask)
