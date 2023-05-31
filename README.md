@@ -27,7 +27,7 @@ The default thresholds are as followed:
 
 | Metrics   | `anatomical_dice` | `functional_dice` | `mean_fd` | `mean_fd_scrubbed` | `proportion_kept` |
 |-----------|-------------------|-------------------|-----------|--------------------|-------------------|
-| Threshold | 0.99              | 0.89              | 0.55      | N/A                | 0.5               |
+| Threshold | 0.97              | 0.89              | 0.55      | N/A                | 0.5               |
 
 A subject with failed `anatomical_dice` would be marked as failed.
 A scan with any functiona metrics failed would be marked as failed.
@@ -84,7 +84,13 @@ optional arguments:
   --task TASK [TASK ...]
                         The name of the task that you want to calculate metric with. The label corresponds to
                         task-<task_label> from the BIDS spec (so it does not include 'task-').
-
+  --quality_control_parameters QUALITY_CONTROL_PARAMETERS
+                        The path to customised quality control parameters. When no file is supplied, we will 
+                        filter with the default parameters. It should include the following fields: 
+                        mean_fd (default=0.55), scrubbing_fd (default=0.2), proportion_kept (default=0.5), 
+                        anatomical_dice (default=0.99), functional_dice (default=0.89)
+  --reindex-bids        Reindex BIDS data set, even if layout has already been created.
+  --verbose VERBOSE     Verbrosity. 0 for minimal, 1 for more details. Default to 1.
 ```
 
 ## Acknowledgements
