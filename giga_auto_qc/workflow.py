@@ -1,10 +1,7 @@
-from typing import List
 import json
-from pathlib import Path
-
 from bids import BIDSLayout
 
-from giga_auto_qc import assessments
+from giga_auto_qc import assessments, utils
 
 
 DEFAULT_QC_STANDARD = {
@@ -58,7 +55,7 @@ def workflow(args):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     # get subject list
-    subjects = _get_subject_lists(participant_label, bids_dir)
+    subjects = utils.get_subject_lists(participant_label, bids_dir)
     # infer task for bids search
     tasks = args.task if args.task else fmriprep_bids_layout.get_tasks()
 
@@ -88,45 +85,5 @@ def workflow(args):
             metrics, anatomical_metrics, quality_control_parameters
         )
         # split the index into sub - ses - task - run
-        metrics = assessments.parse_scan_information(metrics)
+        metrics = utils.parse_scan_information(metrics)
         metrics.to_csv(output_dir / f"task-{task}_report.tsv", sep="\t")
-
-
-def _get_subject_lists(
-    participant_label: List[str], bids_dir: Path
-) -> List[str]:
-    """
-    Parse subject list from user options.
-
-    Parameters
-    ----------
-
-    participant_label :
-
-        A list of BIDS competible subject identifiers.
-        If the prefix `sub-` is present, it will be removed.
-
-    bids_dir :
-
-        The fMRIPrep derivative output.
-
-    Return
-    ------
-
-    List
-        BIDS subject identifier without `sub-` prefix.
-    """
-    if participant_label:
-        checked_labels = []
-        for sub_id in participant_label:
-            if "sub-" in sub_id:
-                sub_id = sub_id.replace("sub-", "")
-            checked_labels.append(sub_id)
-        return checked_labels
-    # get all subjects, this is quicker than bids...
-    subject_dirs = bids_dir.glob("sub-*/")
-    return [
-        subject_dir.name.split("-")[-1]
-        for subject_dir in subject_dirs
-        if subject_dir.is_dir()
-    ]

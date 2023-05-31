@@ -13,7 +13,7 @@ from nilearn.masking import intersect_masks
 import templateflow
 from bids import BIDSLayout
 
-template = "MNI152NLin2009cAsym"
+TEMPLATE = "MNI152NLin2009cAsym"
 
 
 def get_reference_mask(
@@ -51,7 +51,7 @@ def get_reference_mask(
         Reference brain masks for anatomical and functional scans.
     """
     template_mask = templateflow.api.get(
-        [template], desc="brain", suffix="mask", resolution="01"
+        [TEMPLATE], desc="brain", suffix="mask", resolution="01"
     )
     reference_masks = {"anat": template_mask}
     if verbose > 0:
@@ -64,7 +64,7 @@ def get_reference_mask(
         func_filter = {
             "subject": subjects,
             "task": task,
-            "space": template,
+            "space": TEMPLATE,
             "desc": ["brain"],
             "suffix": ["mask"],
             "extension": "nii.gz",
@@ -74,7 +74,7 @@ def get_reference_mask(
             **func_filter, return_type="file"
         )
         if verbose > 1:
-            print(f"Got reference template {template}.")
+            print(f"Got reference template {TEMPLATE}.")
         reference_masks["func"] = intersect_masks(func_masks, threshold=0.5)
         if verbose > 1:
             print("Customised reference mask generated.")
@@ -158,7 +158,7 @@ def calculate_functional_metrics(
     func_filter = {
         "subject": subjects,
         "task": task,
-        "space": template,
+        "space": TEMPLATE,
         "desc": ["brain"],
         "suffix": ["mask"],
         "extension": "nii.gz",
@@ -168,7 +168,7 @@ def calculate_functional_metrics(
     if verbose > 0:
         print("Calculate EPI mask dice...")
     for func_file in tqdm(func_images):
-        identifier = Path(func_file).name.split(f"_space-{template}")[0]
+        identifier = Path(func_file).name.split(f"_space-{TEMPLATE}")[0]
         functional_dice = _dice_coefficient(func_file, reference_masks["func"])
         if identifier in metrics:
             metrics[identifier].update({"functional_dice": functional_dice})
@@ -210,7 +210,7 @@ def calculate_anat_metrics(
     for sub in tqdm(subjects):
         anat_filter = {
             "subject": sub,
-            "space": template,
+            "space": TEMPLATE,
             "desc": ["brain"],
             "suffix": ["mask"],
             "extension": "nii.gz",
@@ -288,41 +288,8 @@ def quality_accessments(
     return metrics
 
 
-def parse_scan_information(metrics: pd.DataFrame) -> pd.DataFrame:
-    """
-    Parse the identifier into BIDS entities: subject, session, task, run.
-    If session and run are not present, the information will not be parsed.
-
-    Parameters
-    ----------
-
-    metrics:
-        Quality assessment output with identifier as index.
-
-    Returns
-    -------
-    pandas.DataFrame
-        Quality assessment with BIDS entity separated.
-    """
-    metrics.index.name = "identifier"
-    examplar = metrics.index[0].split("_")
-    headers = [e.split("-")[0] for e in examplar]
-    identifiers = pd.DataFrame(
-        metrics.index.tolist(), index=metrics.index, columns=["identifier"]
-    )
-    identifiers[headers] = identifiers["identifier"].str.split(
-        "_", expand=True
-    )
-    identifiers = identifiers.drop("identifier", axis=1)
-    for h in headers:
-        identifiers[h] = identifiers[h].str.replace(f"{h}-", "")
-    identifiers = identifiers.rename(columns={"sub": "participant_id"})
-    metrics = pd.concat((identifiers, metrics), axis=1)
-    return metrics
-
-
 def _dice_coefficient(
-    processed_img: Union[str, Path],
+    processed_img: Union[str, Path, Nifti1Image],
     template_mask: Union[str, Path, Nifti1Image],
 ) -> np.array:
     """
