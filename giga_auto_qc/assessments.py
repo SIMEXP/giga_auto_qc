@@ -5,6 +5,8 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
+from nibabel import Nifti1Image
+
 from nilearn.image import load_img, resample_to_img
 from nilearn.masking import intersect_masks
 
@@ -231,7 +233,8 @@ def calculate_anat_metrics(
 
 
 def quality_accessments(
-    functional_metrics: pd.DataFrame, anatomical_metrics: pd.DataFrame,
+    functional_metrics: pd.DataFrame,
+    anatomical_metrics: pd.DataFrame,
     qulaity_control_standards: dict,
 ) -> pd.DataFrame:
     """
@@ -319,9 +322,26 @@ def parse_scan_information(metrics: pd.DataFrame) -> pd.DataFrame:
 
 
 def _dice_coefficient(
-    processed_img: Union[str, Path], template_mask: Union[str, Path]
+    processed_img: Union[str, Path],
+    template_mask: Union[str, Path, Nifti1Image],
 ) -> np.array:
-    """Compute the Sørensen-dice coefficient between two n-d volumes."""
+    """
+    Compute the Sørensen-dice coefficient between two n-d volumes.
+
+    Parameters
+    ----------
+
+    processed_img:
+        Path to the processed structural or functional mask from fMRIPrep.
+
+    template_mask:
+        Path or nifti image object of the reference template.
+
+    Return
+    ------
+    numpy.array
+        The dice coefficient.
+    """
     # make sure the inputs are 3d
     processed_img = load_img(processed_img)
     template_mask = load_img(template_mask)

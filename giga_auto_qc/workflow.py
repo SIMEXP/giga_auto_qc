@@ -95,9 +95,34 @@ def workflow(args):
 def _get_subject_lists(
     participant_label: List[str], bids_dir: Path
 ) -> List[str]:
-    """Parse subject list from user options"""
+    """
+    Parse subject list from user options.
+
+    Parameters
+    ----------
+
+    participant_label :
+
+        A list of BIDS competible subject identifiers.
+        If the prefix `sub-` is present, it will be removed.
+
+    bids_dir :
+
+        The fMRIPrep derivative output.
+
+    Return
+    ------
+
+    List
+        BIDS subject identifier without `sub-` prefix.
+    """
     if participant_label:
-        return participant_label
+        checked_labels = []
+        for sub_id in participant_label:
+            if "sub-" in sub_id:
+                sub_id = sub_id.replace("sub-", "")
+            checked_labels.append(sub_id)
+        return checked_labels
     # get all subjects, this is quicker than bids...
     subject_dirs = bids_dir.glob("sub-*/")
     return [
