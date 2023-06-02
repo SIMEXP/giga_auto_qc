@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Tuple
 
 from pathlib import Path
 from tqdm import tqdm
@@ -8,7 +8,7 @@ import pandas as pd
 from nibabel import Nifti1Image
 
 from nilearn.image import load_img, resample_to_img
-from nilearn.masking import intersect_masks
+from nilearn.masking import intersect_masks, _load_mask_img
 
 import templateflow
 from bids import BIDSLayout
@@ -75,6 +75,7 @@ def get_reference_mask(
         )
         if verbose > 1:
             print(f"Got reference template {TEMPLATE}.")
+
         reference_masks["func"] = intersect_masks(func_masks, threshold=0.5)
         if verbose > 1:
             print("Customised reference mask generated.")
@@ -83,6 +84,64 @@ def get_reference_mask(
             print("Use standard template as functional scan reference.")
         reference_masks["func"] = template_mask
     return reference_masks
+
+
+def _check_mask_affine(
+    mask_imgs: List[Path, str, Nifti1Image]
+) -> Tuple[tuple, np.array]:
+    """Given a list of input mask images, show the most common affine matrix
+    and subjects with different values.
+
+    Parameters
+    ----------
+    mask_imgs : :obj:`list` of Niimg-like objects
+        See :ref:`extracting_data`.
+        3D individual masks with same shape and affine.
+    """
+    if not mask_imgs:
+        raise ValueError("No mask provided for checking.")
+    # save all header and affine info in hashable type...
+    header_info = {"affine": [], "shape": []}
+    key_to_header = {}
+    for this_mask in mask_imgs:
+        mask, affine = _load_mask_img(this_mask, allow_empty=True)
+        shape = mask.shape
+        affine_hashable = str(affine)
+        shape_hashable = str(shape)
+        header_info["affine"].append(affine_hashable)
+        header_info["shape"].append(shape_hashable)
+        if affine_hashable not in key_to_header:
+            key_to_header[affine_hashable] = affine
+        if shape_hashable not in key_to_header:
+            key_to_header[shape_hashable] = shape
+
+    if isinstance(mask_imgs[0], Nifti1Image):
+        mask_imgs = np.arange(len(mask_imgs))
+    else:
+        mask_imgs = np.array(mask_imgs)
+    # get most common values
+    common_affine = max(
+        set(header_info["affine"]), key=header_info["affine"].count
+    )
+    common_shape = max(
+        set(header_info["shape"]), key=header_info["shape"].count
+    )
+    print(
+        f"We found {len(set(header_info['affine']))} unique affine "
+        f"matrices. The most common one is "
+        f"{key_to_header[common_affine]}"
+    )
+    odd_balls = set(header_info["affine"]) - {common_affine}
+    for ob in odd_balls:
+        ob_index = [
+            i for i, aff in enumerate(header_info["affine"]) if aff == ob
+        ]
+        print(
+            "The following subjects has a different affine matrix "
+            f"({key_to_header[ob]}) comparing to the most common value: "
+            f"{mask_imgs[ob_index]}."
+        )
+    return key_to_header[common_affine], key_to_header[common_shape]
 
 
 def calculate_functional_metrics(
