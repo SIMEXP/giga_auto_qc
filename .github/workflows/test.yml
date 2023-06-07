@@ -48,10 +48,6 @@ jobs:
       with:
         name: archive
         path: archive/
-    - name: Install test extras
-      run: pip install giga_auto_qc[test]
-    - name: Run tests
-      run: pytest --doctest-modules -v --pyargs giga_auto_qc
 
   test-package:
     runs-on: ubuntu-latest
@@ -88,6 +84,10 @@ jobs:
     - name: Install archive
       if: matrix.package == 'archive'
       run: pip install archive/archive.tgz
+    - name: Install test extras
+      run: pip install giga_auto_qc[test]
+    - name: Run tests
+      run: pytest --doctest-modules -v --pyargs giga_auto_qc
 
   test-coverage:
     runs-on: ubuntu-latest
