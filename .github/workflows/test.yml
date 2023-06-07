@@ -87,7 +87,13 @@ jobs:
     - name: Install test extras
       run: pip install giga_auto_qc[test]
     - name: Run tests
-      run: pytest --doctest-modules -v --pyargs giga_auto_qc
+      run: pytest --cov=giga_auto_qc --cov-report=xml --doctest-modules -v --pyargs giga_auto_qc
+    - name: Upload coverage to Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        name: codecov-umbrella # optional
+        fail_ci_if_error: false
+        verbose: true
 
   publish:
     runs-on: ubuntu-latest
