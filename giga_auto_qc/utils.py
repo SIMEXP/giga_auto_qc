@@ -4,7 +4,7 @@ import pandas as pd
 
 
 def get_subject_lists(
-    participant_label: List[str], bids_dir: Path
+    participant_label: List[str] = None, bids_dir: Path = None
 ) -> List[str]:
     """
     Parse subject list from user options.
@@ -28,6 +28,7 @@ def get_subject_lists(
         BIDS subject identifier without `sub-` prefix.
     """
     if participant_label:
+        # TODO: check these IDs exists
         checked_labels = []
         for sub_id in participant_label:
             if "sub-" in sub_id:

@@ -1,6 +1,21 @@
+from pathlib import Path
 import pandas as pd
 import numpy as np
+from bids.tests import get_test_data_path
 from giga_auto_qc import utils
+
+
+def test_get_subject_lists():
+    bids_test = Path(get_test_data_path())
+    # strip the sub- prefix
+    subjects = utils.get_subject_lists(participant_label=["sub-01"])
+    assert len(subjects) == 1
+    assert subjects[0] == "01"
+    subjects = utils.get_subject_lists(
+        participant_label=None, bids_dir=bids_test / "ds005_derivs/dummy"
+    )
+    assert len(subjects) == 1
+    assert subjects[0] == "01"
 
 
 def test_parse_scan_information():
