@@ -87,14 +87,7 @@ jobs:
     - name: Install test extras
       run: pip install giga_auto_qc[test]
     - name: Run tests
-      run: pytest --cov giga_auto_qc --cov-report xml --doctest-modules -v --pyargs giga_auto_qc
-    - name: codecov-umbrella
-      uses: codecov/codecov-action@v3
-      with:
-        token: ${{ secrets.CODECOV_TOKEN }}
-        flags: unittests # optional
-        fail_ci_if_error: true # optional (default = false)
-        verbose: true # optional (default = false)
+      run: pytest --doctest-modules -v --pyargs giga_auto_qc
 
   publish:
     runs-on: ubuntu-latest
