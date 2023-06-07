@@ -80,14 +80,16 @@ def get_reference_mask(
             print(f"Got reference template {TEMPLATE}.")
             print(f"Found {len(func_masks)} masks")
 
-        exclude = _check_mask_affine(func_masks, verbose)
-        if exclude:
+        if exclude := _check_mask_affine(func_masks, verbose):
             func_masks, weird_mask_identifiers = _get_consistent_masks(
                 func_masks, exclude
             )
             if verbose > 1:
                 print(f"Remaining: {len(func_masks)} masks")
-        reference_masks["func"] = intersect_masks(func_masks, threshold=0.5)
+        else:
+            weird_mask_identifiers = []
+        group_func_map = intersect_masks(func_masks, threshold=0.5)
+        reference_masks["func"] = group_func_map
     else:
         if verbose > 0:
             print("Use standard template as functional scan reference.")
