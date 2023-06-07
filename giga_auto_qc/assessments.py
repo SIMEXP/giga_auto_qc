@@ -57,6 +57,7 @@ def get_reference_mask(
         [TEMPLATE], desc="brain", suffix="mask", resolution="01"
     )
     reference_masks = {"anat": template_mask}
+    weird_mask_identifiers = []
     if verbose > 0:
         print("Retrieved anatomical reference mask")
 
@@ -84,7 +85,6 @@ def get_reference_mask(
         if exclude:
             odd_masks = np.array(func_masks)[np.array(exclude)]
             odd_masks = odd_masks.tolist()
-            weird_mask_identifiers = []
             for odd_file in odd_masks:
                 identifier = Path(odd_file).name.split("_space")[0]
                 weird_mask_identifiers.append(identifier)
@@ -123,13 +123,11 @@ def _check_mask_affine(
         Index of masks with odd affine matrix. Return None when all masks have
         the same affine matrix.
     """
-    if not mask_imgs:
-        raise ValueError("No mask provided for checking.")
     # save all header and affine info in hashable type...
     header_info = {"affine": []}
     key_to_header = {}
     for this_mask in mask_imgs:
-        mask, affine = _load_mask_img(this_mask, allow_empty=True)
+        _, affine = _load_mask_img(this_mask, allow_empty=True)
         affine_hashable = str(affine)
         header_info["affine"].append(affine_hashable)
         if affine_hashable not in key_to_header:
