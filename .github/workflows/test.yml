@@ -48,6 +48,10 @@ jobs:
       with:
         name: archive
         path: archive/
+    - name: Install test extras
+      run: pip install giga_auto_qc[test]
+    - name: Run tests
+      run: pytest --doctest-modules -v --pyargs giga_auto_qc
 
   test-package:
     runs-on: ubuntu-latest
