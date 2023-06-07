@@ -28,6 +28,7 @@ def get_subject_lists(
         BIDS subject identifier without `sub-` prefix.
     """
     if participant_label:
+        # TODO: check these IDs exists
         checked_labels = []
         for sub_id in participant_label:
             if "sub-" in sub_id:
