@@ -4,6 +4,7 @@ from giga_auto_qc import assessments
 
 
 def test_dice_coefficient():
+    """Check the dice coefficient is calculated correctly."""
     # test image of (5, 5, 6)
     img_base = np.zeros([5, 5, 6])
     processed_vol = img_base.copy()
@@ -27,3 +28,19 @@ def test_dice_coefficient():
         )
         == 0
     )
+
+
+def test_check_mask_affine():
+    """Check odd affine detection."""
+
+    img_base = np.zeros([5, 5, 6])
+    processed_vol = img_base.copy()
+    processed_vol[2:4, 2:4, 2:4] += 1
+    processed = Nifti1Image(processed_vol, np.eye(4))
+    weird = Nifti1Image(processed_vol, np.eye(4) * np.array([1, 1, 1.5, 1]).T)
+
+    exclude = assessments._check_mask_affine(
+        [processed, processed, processed, processed, weird, weird]
+    )
+    assert len(exclude) == 2
+    assert exclude == [4, 5]

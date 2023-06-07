@@ -1,4 +1,4 @@
-from typing import Union, List
+from typing import Union, List, Tuple
 
 from pathlib import Path
 from tqdm import tqdm
@@ -8,7 +8,7 @@ import pandas as pd
 from nibabel import Nifti1Image
 
 from nilearn.image import load_img, resample_to_img
-from nilearn.masking import intersect_masks
+from nilearn.masking import intersect_masks, _load_mask_img
 
 import templateflow
 from bids import BIDSLayout
@@ -22,7 +22,7 @@ def get_reference_mask(
     task: List[str],
     fmriprep_bids_layout: BIDSLayout,
     verbose: int = 1,
-) -> dict:
+) -> Tuple[dict, List[str]]:
     """
     Find the correct target mask for dice coefficient.
 
@@ -49,6 +49,9 @@ def get_reference_mask(
 
     Dict
         Reference brain masks for anatomical and functional scans.
+
+    List of str
+        Identidiers of scans with a different affine.
     """
     template_mask = templateflow.api.get(
         [TEMPLATE], desc="brain", suffix="mask", resolution="01"
@@ -75,14 +78,99 @@ def get_reference_mask(
         )
         if verbose > 1:
             print(f"Got reference template {TEMPLATE}.")
+            print(f"Found {len(func_masks)} masks")
+
+        exclude = _check_mask_affine(func_masks, verbose)
+        if exclude:
+            odd_masks = np.array(func_masks)[np.array(exclude)]
+            odd_masks = odd_masks.tolist()
+            weird_mask_identifiers = []
+            for odd_file in odd_masks:
+                identifier = Path(odd_file).name.split("_space")[0]
+                weird_mask_identifiers.append(identifier)
+            func_masks = np.array(func_masks)[~np.array(exclude)]
+            func_masks = func_masks.tolist()
+            if verbose > 1:
+                print(f"Exclude {len(exclude)} masks")
+
         reference_masks["func"] = intersect_masks(func_masks, threshold=0.5)
-        if verbose > 1:
-            print("Customised reference mask generated.")
     else:
         if verbose > 0:
             print("Use standard template as functional scan reference.")
         reference_masks["func"] = template_mask
-    return reference_masks
+    return reference_masks, weird_mask_identifiers
+
+
+def _check_mask_affine(
+    mask_imgs: List[Union[Path, str, Nifti1Image]], verbose: int = 1
+) -> Union[list, None]:
+    """Given a list of input mask images, show the most common affine matrix
+    and subjects with different values.
+
+    Parameters
+    ----------
+    mask_imgs : :obj:`list` of Niimg-like objects
+        See :ref:`extracting_data`.
+        3D individual masks with same shape and affine.
+
+    verbose :
+        Level of verbosity.
+
+    Returns
+    -------
+
+    List or None
+        Index of masks with odd affine matrix. Return None when all masks have
+        the same affine matrix.
+    """
+    if not mask_imgs:
+        raise ValueError("No mask provided for checking.")
+    # save all header and affine info in hashable type...
+    header_info = {"affine": []}
+    key_to_header = {}
+    for this_mask in mask_imgs:
+        mask, affine = _load_mask_img(this_mask, allow_empty=True)
+        affine_hashable = str(affine)
+        header_info["affine"].append(affine_hashable)
+        if affine_hashable not in key_to_header:
+            key_to_header[affine_hashable] = affine
+
+    if isinstance(mask_imgs[0], Nifti1Image):
+        mask_imgs = np.arange(len(mask_imgs))
+    else:
+        mask_imgs = np.array(mask_imgs)
+    # get most common values
+    common_affine = max(
+        set(header_info["affine"]), key=header_info["affine"].count
+    )
+    if verbose > 0:
+        print(
+            f"We found {len(set(header_info['affine']))} unique affine "
+            f"matrices. The most common one is "
+            f"{key_to_header[common_affine]}"
+        )
+    odd_balls = set(header_info["affine"]) - {common_affine}
+    if not odd_balls:
+        return None
+
+    exclude = []
+    for ob in odd_balls:
+        ob_index = [
+            i for i, aff in enumerate(header_info["affine"]) if aff == ob
+        ]
+        if verbose > 1:
+            print(
+                "The following subjects has a different affine matrix "
+                f"({key_to_header[ob]}) comparing to the most common value: "
+                f"{mask_imgs[ob_index]}."
+            )
+        exclude += ob_index
+    if verbose > 0:
+        print(
+            f"{len(exclude)} out of {len(mask_imgs)} has "
+            "different affine matrix. Ignore when creating group mask."
+        )
+    return exclude
 
 
 def calculate_functional_metrics(
