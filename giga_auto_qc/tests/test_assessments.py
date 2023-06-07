@@ -63,9 +63,25 @@ def test_check_mask_affine():
     processed_vol[2:4, 2:4, 2:4] += 1
     processed = Nifti1Image(processed_vol, np.eye(4))
     weird = Nifti1Image(processed_vol, np.eye(4) * np.array([1, 1, 1.5, 1]).T)
-
+    weird2 = Nifti1Image(processed_vol, np.eye(4) * np.array([1, 1, 1.6, 1]).T)
     exclude = assessments._check_mask_affine(
-        [processed, processed, processed, processed, weird, weird]
+        [processed, processed, processed, processed, weird, weird, weird2],
+        verbose=2,
     )
-    assert len(exclude) == 2
-    assert exclude == [4, 5]
+    assert len(exclude) == 3
+    assert exclude == [4, 5, 6]
+
+
+def test_get_consistent_masks():
+    """Check odd affine detection."""
+    mask_imgs = [
+        f"sub-{i + 1:2d}_task-rest_space-MNI_desc-brain_mask.nii.gz"
+        for i in range(10)
+    ]
+    exclude = [1, 2, 5]
+    (
+        cleaned_func_masks,
+        weird_mask_identifiers,
+    ) = assessments._get_consistent_masks(mask_imgs, exclude)
+    assert len(cleaned_func_masks) == 7
+    assert len(weird_mask_identifiers) == 3
