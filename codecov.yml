@@ -17,4 +17,4 @@
 
 ignore:
 - '*/tests/'    # ignore folders related to testing
-- '*/data'
+- '*/data/'
