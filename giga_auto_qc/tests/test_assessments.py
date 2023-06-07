@@ -1,6 +1,31 @@
 import numpy as np
+import pandas as pd
 from nibabel import Nifti1Image
 from giga_auto_qc import assessments
+
+
+def test_quality_accessments():
+    functional_metrics = pd.DataFrame(
+        [0.2, 0.99, 0.88],
+        columns=["sub-001_task-rest"],
+        index=["mean_fd_raw", "proportion_kept", "functional_dice"],
+    ).T
+    anatomical_metrics = pd.DataFrame(
+        [0.99, True], columns=["001"], index=["anatomical_dice", "pass_qc"]
+    ).T
+    qc = {
+        "mean_fd": 0.55,
+        "scrubbing_fd": 0.2,
+        "proportion_kept": 0.5,
+        "anatomical_dice": 0.97,
+        "functional_dice": 0.87,
+    }
+    metrics = assessments.quality_accessments(
+        functional_metrics=functional_metrics,
+        anatomical_metrics=anatomical_metrics,
+        qulaity_control_standards=qc,
+    )
+    assert metrics["pass_all_qc"].astype(int).sum() == 1
 
 
 def test_dice_coefficient():
