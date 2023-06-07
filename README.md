@@ -1,4 +1,5 @@
- [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![codecov](https://codecov.io/github/SIMEXP/giga_auto_qc/branch/main/graph/badge.svg?token=TYE4UURNTQ)](https://codecov.io/github/SIMEXP/giga_auto_qc)
 # Giga automatic quality control
 
 Automatic quality control for fMRIPrep outputs aimed for large datasets.
@@ -37,13 +38,13 @@ Users can use the report as is to filter subjects, or perform further visual ins
 ## How to report errors
 
 Please use the GitHub issue to report errors.
-Check out the open issues first to see if we're already working on it. 
+Check out the open issues first to see if we're already working on it.
 If not, open up a new issue and we will get back to you when we can!
 
 ## How to contribute
 
-You can review open issues that we are looking for help with. 
-If you submit a new pull request please be as detailed as possible in your comments. 
+You can review open issues that we are looking for help with.
+If you submit a new pull request please be as detailed as possible in your comments.
 
 ## Installation
 
@@ -85,9 +86,9 @@ optional arguments:
                         The name of the task that you want to calculate metric with. The label corresponds to
                         task-<task_label> from the BIDS spec (so it does not include 'task-').
   --quality_control_parameters QUALITY_CONTROL_PARAMETERS
-                        The path to customised quality control parameters. When no file is supplied, we will 
-                        filter with the default parameters. It should include the following fields: 
-                        mean_fd (default=0.55), scrubbing_fd (default=0.2), proportion_kept (default=0.5), 
+                        The path to customised quality control parameters. When no file is supplied, we will
+                        filter with the default parameters. It should include the following fields:
+                        mean_fd (default=0.55), scrubbing_fd (default=0.2), proportion_kept (default=0.5),
                         anatomical_dice (default=0.99), functional_dice (default=0.89)
   --reindex-bids        Reindex BIDS data set, even if layout has already been created.
   --verbose VERBOSE     Verbrosity. 0 for minimal, 1 for more details. Default to 1.
