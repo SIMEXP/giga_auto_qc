@@ -57,7 +57,6 @@ def get_reference_mask(
         [TEMPLATE], desc="brain", suffix="mask", resolution="01"
     )
     reference_masks = {"anat": template_mask}
-    weird_mask_identifiers = []
     if verbose > 0:
         print("Retrieved anatomical reference mask")
 
@@ -83,22 +82,51 @@ def get_reference_mask(
 
         exclude = _check_mask_affine(func_masks, verbose)
         if exclude:
-            odd_masks = np.array(func_masks)[np.array(exclude)]
-            odd_masks = odd_masks.tolist()
-            for odd_file in odd_masks:
-                identifier = Path(odd_file).name.split("_space")[0]
-                weird_mask_identifiers.append(identifier)
-            func_masks = np.array(func_masks)[~np.array(exclude)]
-            func_masks = func_masks.tolist()
+            func_masks, weird_mask_identifiers = _get_consistent_masks(
+                func_masks, exclude
+            )
             if verbose > 1:
-                print(f"Exclude {len(exclude)} masks")
-
+                print(f"Remaining: {len(func_masks)} masks")
         reference_masks["func"] = intersect_masks(func_masks, threshold=0.5)
     else:
         if verbose > 0:
             print("Use standard template as functional scan reference.")
         reference_masks["func"] = template_mask
+        weird_mask_identifiers = []
     return reference_masks, weird_mask_identifiers
+
+
+def _get_consistent_masks(
+    mask_imgs: List[Union[Path, str, Nifti1Image]], exclude: List[int]
+) -> Tuple[List[int], List[str]]:
+    """Create a list of masks that has the same affine.
+
+    Parameters
+    ----------
+
+    func_masks :
+        The original list of functional masks
+
+    exclude :
+        List of index to exclude.
+
+    Returns
+    -------
+    List of str
+        Functional masks with the same affine.
+
+    List of str
+        Identidiers of scans with a different affine.
+    """
+    weird_mask_identifiers = []
+    odd_masks = np.array(mask_imgs)[np.array(exclude)]
+    odd_masks = odd_masks.tolist()
+    for odd_file in odd_masks:
+        identifier = Path(odd_file).name.split("_space")[0]
+        weird_mask_identifiers.append(identifier)
+    cleaned_func_masks = set(mask_imgs) - set(odd_masks)
+    cleaned_func_masks = list(cleaned_func_masks)
+    return cleaned_func_masks, weird_mask_identifiers
 
 
 def _check_mask_affine(
@@ -168,7 +196,7 @@ def _check_mask_affine(
             f"{len(exclude)} out of {len(mask_imgs)} has "
             "different affine matrix. Ignore when creating group mask."
         )
-    return exclude
+    return sorted(exclude)
 
 
 def calculate_functional_metrics(
