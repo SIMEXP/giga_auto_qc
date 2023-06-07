@@ -107,19 +107,14 @@ def _check_mask_affine(
     if not mask_imgs:
         raise ValueError("No mask provided for checking.")
     # save all header and affine info in hashable type...
-    header_info = {"affine": [], "shape": []}
+    header_info = {"affine": []}
     key_to_header = {}
     for this_mask in mask_imgs:
         mask, affine = _load_mask_img(this_mask, allow_empty=True)
-        shape = mask.shape
         affine_hashable = str(affine)
-        shape_hashable = str(shape)
         header_info["affine"].append(affine_hashable)
-        header_info["shape"].append(shape_hashable)
         if affine_hashable not in key_to_header:
             key_to_header[affine_hashable] = affine
-        if shape_hashable not in key_to_header:
-            key_to_header[shape_hashable] = shape
 
     if isinstance(mask_imgs[0], Nifti1Image):
         mask_imgs = np.arange(len(mask_imgs))
@@ -129,9 +124,6 @@ def _check_mask_affine(
     common_affine = max(
         set(header_info["affine"]), key=header_info["affine"].count
     )
-    # common_shape = max(
-    #     set(header_info["shape"]), key=header_info["shape"].count
-    # )
     if verbose > 0:
         print(
             f"We found {len(set(header_info['affine']))} unique affine "
