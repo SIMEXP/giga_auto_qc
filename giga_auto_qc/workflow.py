@@ -59,7 +59,10 @@ def workflow(args):
     # infer task for bids search
     tasks = args.task if args.task else fmriprep_bids_layout.get_tasks()
 
-    reference_masks = assessments.get_reference_mask(
+    (
+        reference_masks,
+        weird_func_mask_identifiers,
+    ) = assessments.get_reference_mask(
         analysis_level, subjects, tasks, fmriprep_bids_layout, args.verbose
     )
 
@@ -84,6 +87,10 @@ def workflow(args):
         metrics = assessments.quality_accessments(
             metrics, anatomical_metrics, quality_control_parameters
         )
+        metrics["different_func_affine"] = False
+        metrics.loc[
+            weird_func_mask_identifiers, "different_func_affine"
+        ] = True
         # split the index into sub - ses - task - run
         metrics = utils.parse_scan_information(metrics)
         metrics.to_csv(output_dir / f"task-{task}_report.tsv", sep="\t")
