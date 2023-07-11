@@ -70,14 +70,10 @@ def parse_scan_information(metrics: pd.DataFrame) -> pd.DataFrame:
         examplar = id.split("_")
         new_headers = set([e.split("-")[0] for e in examplar])
         headers_members.update(new_headers)
-    headers_members = list(headers_members)
-    ordered_header = [None, None, None, None]
+    ordered_header = [None] * len(BIDS_ENTITIES)
     for header in headers_members:
         ordered_header[BIDS_ENTITIES[header]] = header
-    headers = []
-    for val in ordered_header:
-        if val is not None:
-            headers.append(val)
+    headers = [h for h in ordered_header if h is not None]  # remove none
 
     identifiers = pd.DataFrame(
         metrics.index.tolist(), index=metrics.index, columns=["identifier"]
