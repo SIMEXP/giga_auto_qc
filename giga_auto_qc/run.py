@@ -4,7 +4,7 @@ from pathlib import Path
 from giga_auto_qc.workflow import workflow
 
 
-def main():
+def main(argv=None):
     """Entry point."""
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawTextHelpFormatter,
@@ -74,6 +74,6 @@ def main():
         type=int,
         default=1,
     )
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     workflow(args)

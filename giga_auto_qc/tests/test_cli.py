@@ -1,37 +1,60 @@
-from pathlib import Path
 from pkg_resources import resource_filename
 
-import argparse
-from giga_auto_qc.workflow import workflow
+from giga_auto_qc.run import main
 
 import pytest
-import os
-
-IN_GITHUB_ACTIONS = os.getenv("GITHUB_ACTIONS") == "true"
 
 
-@pytest.mark.skipif(
-    IN_GITHUB_ACTIONS, reason="Test doesn't work in Github Actions."
-)
-def test_smoke(tmp_path):
+def test_help(capsys):
+    try:
+        main(["-h"])
+    except SystemExit:
+        pass
+    captured = capsys.readouterr()
+    assert "Quality control metric" in captured.out
+
+
+@pytest.mark.smoke
+def test_smoke_participant(tmp_path, capsys):
+    """Somke test on participant level."""
     bids_dir = resource_filename(
-        "giga_auto_qc", "data/test_data/ds000017-fmriprep22.0.1-downsampled"
-    )
-
-    args = argparse.Namespace(
-        reindex_bids=False,
-        verbose=1,
-        participant_label=[],
-        task=None,
-        quality_control_parameters=None,
-        analysis_level="participant",
-        bids_dir=Path(bids_dir),
-        output_dir=tmp_path,
+        "giga_auto_qc",
+        "data/test_data/ds000017-fmriprep22.0.1-downsampled-nosurface",
     )
 
     # Smoke test the participant level
-    workflow(args)
+    main(
+        [
+            "--participant_label",
+            "1",
+            "--reindex-bids",
+            str(bids_dir),
+            str(tmp_path),
+            "participant",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert "participant_label=['1']" in captured.out
+    assert (
+        "Use standard template as functional scan reference." in captured.out
+    )
 
+
+@pytest.mark.smoke
+def test_smoke_group(tmp_path, capsys):
+    """Somke test on group level."""
+    bids_dir = resource_filename(
+        "giga_auto_qc",
+        "data/test_data/ds000017-fmriprep22.0.1-downsampled-nosurface",
+    )
     # Smoke test the group level
-    args.analysis_level = "group"
-    workflow(args)
+    main(
+        [
+            "--reindex-bids",
+            str(bids_dir),
+            str(tmp_path),
+            "group",
+        ]
+    )
+    captured = capsys.readouterr()
+    assert "Create dataset level functional brain mask" in captured.out

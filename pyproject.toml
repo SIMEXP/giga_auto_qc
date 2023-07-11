@@ -57,10 +57,16 @@ exclude = [".git_archival.txt"]
 [tool.hatch.build.targets.wheel]
 packages = ["giga_auto_qc"]
 exclude = [
-    "giga_auto_qc/data/test_data",
+  ".github",
+  "giga_auto_qc/data/test_data",
 ]
 
 [tool.black]
 target-version = ['py38']
 exclude = "giga_auto_qc/_version.py"
 line_length = 79
+
+[tool.pytest.ini_options]
+markers = [
+    "smoke: smoke tests that will run on a downsampled real dataset (deselect with '-m \"not smoke\"')",
+]
