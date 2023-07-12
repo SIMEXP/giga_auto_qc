@@ -34,10 +34,11 @@ def test_parse_scan_information():
         == "test"
     )
 
+    # specifiers with different entities
     bids_specifier_index = [
+        "sub-test_task-finger",
         "sub-test_task-rest_run-001",
         "sub-test_task-rest_run-002",
-        "sub-test_task-finger",
     ]
     metrics = pd.DataFrame(
         np.random.random((3, 4)), index=bids_specifier_index
