@@ -2,6 +2,8 @@ from typing import List
 from pathlib import Path
 import pandas as pd
 
+BIDS_ENTITIES = {"sub": 0, "ses": 1, "task": 2, "run": 3}
+
 
 def get_subject_lists(
     participant_label: List[str] = None, bids_dir: Path = None
@@ -61,8 +63,18 @@ def parse_scan_information(metrics: pd.DataFrame) -> pd.DataFrame:
         Quality assessment with BIDS entity separated.
     """
     metrics.index.name = "identifier"
-    examplar = metrics.index[0].split("_")
-    headers = [e.split("-")[0] for e in examplar]
+
+    # get all unique entities
+    headers_members = set()
+    for id in metrics.index:
+        examplar = id.split("_")
+        new_headers = set([e.split("-")[0] for e in examplar])
+        headers_members.update(new_headers)
+    ordered_header = [None] * len(BIDS_ENTITIES)
+    for header in headers_members:
+        ordered_header[BIDS_ENTITIES[header]] = header
+    headers = [h for h in ordered_header if h is not None]  # remove none
+
     identifiers = pd.DataFrame(
         metrics.index.tolist(), index=metrics.index, columns=["identifier"]
     )
