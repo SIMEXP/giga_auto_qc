@@ -113,6 +113,5 @@ def test_calculate_anat_metrics():
         {"anat": template_mask},
         {"anatomical_dice": 0.97},
     )
-    print(df)
 
     assert df.shape == (2, 2)
