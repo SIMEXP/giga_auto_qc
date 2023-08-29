@@ -2,6 +2,10 @@ import numpy as np
 import pandas as pd
 from nibabel import Nifti1Image
 from giga_auto_qc import assessments
+from bids import BIDSLayout
+from pkg_resources import resource_filename
+import pytest
+import templateflow
 
 
 def test_quality_accessments():
@@ -85,3 +89,30 @@ def test_get_consistent_masks():
     ) = assessments._get_consistent_masks(mask_imgs, exclude)
     assert len(cleaned_func_masks) == 7
     assert len(weird_mask_identifiers) == 3
+
+
+@pytest.mark.smoke
+def test_calculate_anat_metrics():
+    bids_dir = resource_filename(
+        "giga_auto_qc",
+        "data/test_data/ds000017-fmriprep22.0.1-downsampled-nosurface",
+    )
+    fmriprep_bids_layout = BIDSLayout(
+        root=bids_dir,
+        database_path=bids_dir,
+        validate=False,
+        derivatives=True,
+        reset_database=True,
+    )
+    template_mask = templateflow.api.get(
+        ["MNI152NLin2009cAsym"], desc="brain", suffix="mask", resolution="01"
+    )
+    df = assessments.calculate_anat_metrics(
+        ["1", "2"],
+        fmriprep_bids_layout,
+        {"anat": template_mask},
+        {"anatomical_dice": 0.97},
+    )
+    print(df)
+
+    assert df.shape == (2, 2)
