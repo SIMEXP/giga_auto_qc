@@ -161,7 +161,7 @@ jobs:
         pytest -m "not smoke" --cov=giga_auto_qc --cov-report=xml --doctest-modules -v --pyargs giga_auto_qc
 
     - name: Full test - run all the test to generate accurate coverage report.
-      if: ${{ contains(needs.check_skip_flags.outputs.head-commit-message, 'full_test') }} || ${{ github.event.pull_request.merged }}
+      if: ${{ contains(needs.check_skip_flags.outputs.head-commit-message, 'full_test') }}
       run: pytest --cov=giga_auto_qc --cov-report=xml --doctest-modules -v --pyargs giga_auto_qc
 
     - uses: codecov/codecov-action@v3
