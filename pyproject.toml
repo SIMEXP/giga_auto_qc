@@ -21,7 +21,7 @@ classifiers = [
 dependencies = [
   "nilearn",
   "pybids >=0.15.0, <0.16.0",
-  "templateflow < 23.0.0",
+  "templateflow < 0.8.1",
 ]
 dynamic = ["version"]
 
