@@ -78,17 +78,30 @@ def test_check_mask_affine():
 
 def test_get_consistent_masks():
     """Check odd affine detection."""
+    # mix in different tasks
     mask_imgs = [
         f"sub-{i + 1:2d}_task-rest_space-MNI_desc-brain_mask.nii.gz"
-        for i in range(10)
+        for i in range(7)
+    ] + [
+        f"sub-{i + 1:2d}_task-stuff_space-MNI_desc-brain_mask.nii.gz"
+        for i in range(7)
     ]
-    exclude = [1, 2, 5]
+    exclude = [1, 2, 10]
     (
         cleaned_func_masks,
         weird_mask_identifiers,
     ) = assessments._get_consistent_masks(mask_imgs, exclude)
-    assert len(cleaned_func_masks) == 7
-    assert len(weird_mask_identifiers) == 3
+    assert len(cleaned_func_masks) == len(mask_imgs) - len(exclude)
+    assert len(weird_mask_identifiers["rest"]) == 2
+    assert len(weird_mask_identifiers["stuff"]) == 1
+
+    exclude = [1, 2, 3]
+    (
+        cleaned_func_masks,
+        weird_mask_identifiers,
+    ) = assessments._get_consistent_masks(mask_imgs, exclude)
+    assert len(weird_mask_identifiers["rest"]) == 3
+    assert weird_mask_identifiers.get("stuff") is None
 
 
 @pytest.mark.smoke

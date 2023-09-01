@@ -88,9 +88,13 @@ def workflow(args):
             metrics, anatomical_metrics, quality_control_parameters
         )
         metrics["different_func_affine"] = False
-        metrics.loc[
-            weird_func_mask_identifiers, "different_func_affine"
-        ] = True
+        if (
+            weird_func_mask_identifiers is not None
+            and task in weird_func_mask_identifiers
+        ):
+            metrics.loc[
+                weird_func_mask_identifiers[task], "different_func_affine"
+            ] = True
         # split the index into sub - ses - task - run
         metrics = utils.parse_scan_information(metrics)
         metrics.to_csv(output_dir / f"task-{task}_report.tsv", sep="\t")
