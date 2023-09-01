@@ -10,7 +10,6 @@ from nibabel import Nifti1Image
 from nilearn.image import load_img, resample_to_img
 from nilearn.masking import intersect_masks, _load_mask_img
 
-import templateflow
 from bids import BIDSLayout
 
 TEMPLATE = "MNI152NLin2009cAsym"
@@ -56,6 +55,8 @@ def get_reference_mask(
         be included in the dictionary. If all scans have the same
         affine, return None.
     """
+    import templateflow
+
     template_mask = templateflow.api.get(
         [TEMPLATE], desc="brain", suffix="mask", resolution="01"
     )

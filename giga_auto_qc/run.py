@@ -2,6 +2,7 @@ import argparse
 from pathlib import Path
 
 from giga_auto_qc.workflow import workflow
+from giga_auto_qc import __version__
 
 
 def main(argv=None):
@@ -30,6 +31,9 @@ def main(argv=None):
         "analysis_level",
         help="Level of the analysis that will be performed.",
         choices=["participant", "group"],
+    )
+    parser.add_argument(
+        "-v", "--version", action="version", version=__version__
     )
     parser.add_argument(
         "--participant_label",
