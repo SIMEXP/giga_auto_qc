@@ -1,4 +1,4 @@
-from typing import Union, List, Tuple
+from typing import Union, List, Tuple, Optional
 
 from pathlib import Path
 from tqdm import tqdm
@@ -22,7 +22,7 @@ def get_reference_mask(
     task: List[str],
     fmriprep_bids_layout: BIDSLayout,
     verbose: int = 1,
-) -> Tuple[dict, List[str]]:
+) -> Tuple[dict, Optional[dict]]:
     """
     Find the correct target mask for dice coefficient.
 
@@ -50,8 +50,11 @@ def get_reference_mask(
     Dict
         Reference brain masks for anatomical and functional scans.
 
-    List of str
-        Identidiers of scans with a different affine.
+    Dict
+        Identidiers of scans with a different affine by task. If all
+        scans in one task have the same affine, the task will not
+        be included in the dictionary. If all scans have the same
+        affine, return None.
     """
     template_mask = templateflow.api.get(
         [TEMPLATE], desc="brain", suffix="mask", resolution="01"
@@ -81,26 +84,26 @@ def get_reference_mask(
             print(f"Found {len(func_masks)} masks")
 
         if exclude := _check_mask_affine(func_masks, verbose):
-            func_masks, weird_mask_identifiers = _get_consistent_masks(
+            func_masks, weird_mask_identifiers_by_task = _get_consistent_masks(
                 func_masks, exclude
             )
             if verbose > 1:
                 print(f"Remaining: {len(func_masks)} masks")
         else:
-            weird_mask_identifiers = []
+            weird_mask_identifiers_by_task = None
         group_func_map = intersect_masks(func_masks, threshold=0.5)
         reference_masks["func"] = group_func_map
     else:
         if verbose > 0:
             print("Use standard template as functional scan reference.")
         reference_masks["func"] = template_mask
-        weird_mask_identifiers = []
-    return reference_masks, weird_mask_identifiers
+        weird_mask_identifiers_by_task = None
+    return reference_masks, weird_mask_identifiers_by_task
 
 
 def _get_consistent_masks(
     mask_imgs: List[Union[Path, str, Nifti1Image]], exclude: List[int]
-) -> Tuple[List[int], List[str]]:
+) -> Tuple[List[int], dict]:
     """Create a list of masks that has the same affine.
 
     Parameters
@@ -117,8 +120,8 @@ def _get_consistent_masks(
     List of str
         Functional masks with the same affine.
 
-    List of str
-        Identidiers of scans with a different affine.
+    Dict
+        Identidiers of scans with a different affine by task.
     """
     weird_mask_identifiers = []
     odd_masks = np.array(mask_imgs)[np.array(exclude)]
@@ -128,7 +131,15 @@ def _get_consistent_masks(
         weird_mask_identifiers.append(identifier)
     cleaned_func_masks = set(mask_imgs) - set(odd_masks)
     cleaned_func_masks = list(cleaned_func_masks)
-    return cleaned_func_masks, weird_mask_identifiers
+
+    # group identifier by task
+    weird_mask_identifiers_by_task = {}
+    for identifier in weird_mask_identifiers:
+        task = identifier.split("_task-")[-1].split("_")[0]
+        if task not in weird_mask_identifiers_by_task:
+            weird_mask_identifiers_by_task[task] = []
+        weird_mask_identifiers_by_task[task].append(identifier)
+    return cleaned_func_masks, weird_mask_identifiers_by_task
 
 
 def _check_mask_affine(
