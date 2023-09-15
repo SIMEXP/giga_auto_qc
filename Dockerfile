@@ -13,6 +13,7 @@ RUN pip3 install templateflow==0.8.1 && \
     mkdir -p /code && mkdir -p ${TEMPLATEFLOW_HOME}
 
 ENV TEMPLATEFLOW_HOME=${TEMPLATEFLOW_HOME}
+ENV TEMPLATEFLOW_AUTOUPDATE=off
 
 WORKDIR /code
 
