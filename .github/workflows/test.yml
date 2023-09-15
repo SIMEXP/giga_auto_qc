@@ -193,7 +193,7 @@ jobs:
     - name: Test the Docker image
       run: |
         docker load -i ${HOME}/docker/image.tar
-        docker run --rm \
+        docker run --rm --read-only \
           -v /home/runner/work/giga_auto_qc/giga_auto_qc/giga_auto_qc/data/test_data:/test_data \
           -v ./outputs:/outputs \
           -v ./outputs/working_dir:/work \
