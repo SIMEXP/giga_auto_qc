@@ -2,7 +2,13 @@ from typing import List
 from pathlib import Path
 import pandas as pd
 
-BIDS_ENTITIES = {"sub": 0, "ses": 1, "task": 2, "run": 3}
+BIDS_ENTITIES = {
+    "sub": 0,
+    "ses": 1,
+    "task": 2,
+    "acq": 3,
+    "run": 4,
+}
 
 
 def get_subject_lists(
