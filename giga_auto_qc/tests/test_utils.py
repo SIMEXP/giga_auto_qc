@@ -45,3 +45,16 @@ def test_parse_scan_information():
     )
     parsed = utils.parse_scan_information(metrics=metrics)
     assert list(parsed.columns[:3]) == ["participant_id", "task", "run"]
+
+    # specifiers with different entities
+    bids_specifier_index = [
+        "sub-test_task-finger",
+        "sub-test_task-rest_acq-1_run-001",
+        "sub-test_task-rest_acq-2_run-001",
+        "sub-test_task-rest_run-002",
+    ]
+    metrics = pd.DataFrame(
+        np.random.random((4, 4)), index=bids_specifier_index
+    )
+    parsed = utils.parse_scan_information(metrics=metrics)
+    assert list(parsed.columns[:4]) == ["participant_id", "task", "acq", "run"]
