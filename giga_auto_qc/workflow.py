@@ -51,6 +51,12 @@ def workflow(args):
         derivatives=True,
         reset_database=args.reindex_bids,
     )
+    if fmriprep_bids_layout is None:
+        raise ValueError(
+            f"Cannot index directory in {bids_dir}. "
+            "Please ensure the path is a fMRIPrep output directory."
+        )
+
     # check output path
     output_dir.mkdir(parents=True, exist_ok=True)
 

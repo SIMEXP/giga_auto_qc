@@ -334,6 +334,12 @@ def calculate_anat_metrics(
     """
     if verbose > 0:
         print("Calculate the anatomical dice score.")
+    # check if the derivative was created with anatomical fast-track
+    check_anat = fmriprep_bids_layout.get(datatype="anat", return_type="file")
+    if not check_anat:
+        print("`anat/` not present in the derivatives. " "Skip anatomical QC.")
+        return pd.DataFrame()
+
     metrics = {}
     for sub in tqdm(subjects):
         anat_filter = {
