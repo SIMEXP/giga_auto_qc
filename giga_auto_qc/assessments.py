@@ -403,6 +403,12 @@ def quality_accessments(
         > qulaity_control_standards["functional_dice"]
     )
     functional_metrics["pass_func_qc"] = keep_fd * keep_proportion * keep_func
+    if anatomical_metrics.empty:
+        functional_metrics["pass_anat_qc"] = np.nan
+        functional_metrics["pass_all_qc"] = functional_metrics[
+            "pass_func_qc"
+        ].copy()
+        return functional_metrics
 
     # get the anatomical pass / fail
     pass_anat_qc = {}
