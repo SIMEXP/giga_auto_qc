@@ -8,7 +8,7 @@ import pandas as pd
 from nibabel import Nifti1Image
 
 from nilearn.image import load_img, resample_to_img
-from nilearn.masking import intersect_masks, _load_mask_img
+from nilearn.masking import intersect_masks, load_mask_img
 
 from bids import BIDSLayout
 
@@ -169,7 +169,7 @@ def _check_mask_affine(
     header_info = {"affine": []}
     key_to_header = {}
     for this_mask in mask_imgs:
-        _, affine = _load_mask_img(this_mask, allow_empty=True)
+        _, affine = load_mask_img(this_mask, allow_empty=True)
         affine_hashable = str(affine)
         header_info["affine"].append(affine_hashable)
         if affine_hashable not in key_to_header:
@@ -281,6 +281,7 @@ def calculate_functional_metrics(
             "mean_fd_raw": fds_mean_raw,
             "mean_fd_scrubbed": fds_mean_scrub,
             "proportion_kept": proportion_kept,
+            "total_frames": timeseries_length,
         }
 
     func_filter = {
