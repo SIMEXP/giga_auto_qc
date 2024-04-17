@@ -109,7 +109,5 @@ def parse_scan_information(metrics: pd.DataFrame) -> pd.DataFrame:
     for h in headers:
         identifiers[h] = identifiers[h].str.replace(f"{h}-", "")
     identifiers = identifiers.rename(columns={"sub": "participant_id"})
-
-    print("Prepared identifiers for merge:", identifiers.head())
     metrics = pd.concat((identifiers, metrics), axis=1)
     return metrics
