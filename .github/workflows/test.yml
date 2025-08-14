@@ -30,7 +30,7 @@ jobs:
       head-commit-message: ${{ steps.get_head_commit_message.outputs.headCommitMsg }}
     steps:
     - name: Get repo
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
       with:
         ref: ${{ github.event.pull_request.head.sha }}
     - name: Print head git commit message
@@ -40,10 +40,10 @@ jobs:
   download-test-data:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: actions/cache@v3
+    - uses: actions/cache@v4
       id: cache
       env:
         cache-name: ds000017
@@ -71,10 +71,10 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
       with:
         fetch-depth: 0
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: 3
     - run: pip install --upgrade build twine
@@ -103,17 +103,17 @@ jobs:
     steps:
     - name: Download sdist and wheel artifacts
       if: matrix.package != 'archive'
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: dist
         path: dist/
     - name: Download git archive artifact
       if: matrix.package == 'archive'
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: archive
         path: archive/
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: 3
     - name: Display Python version
@@ -137,15 +137,15 @@ jobs:
       matrix:
         python-version: ['3.8', '3.9', '3.10', '3.11']
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v4
       name: Set up Python ${{ matrix.python-version }}
-    - uses: actions/setup-python@v4
+    - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
 
     - name: Restore cached data ds000017
       id: cache
-      uses: actions/cache/restore@v3
+      uses: actions/cache/restore@v4
       with:
         path: /home/runner/work/giga_auto_qc/giga_auto_qc/giga_auto_qc/data/test_data
         key: ds000017
@@ -175,7 +175,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [download-test-data, check_skip_flags]
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     - name: Build the Docker image
       run: |
         user_name="bids"
@@ -185,7 +185,7 @@ jobs:
 
     - name: Restore cached data ds000017
       id: cache
-      uses: actions/cache/restore@v3
+      uses: actions/cache/restore@v4
       with:
         path: /home/runner/work/giga_auto_qc/giga_auto_qc/giga_auto_qc/data/test_data
         key: ds000017
