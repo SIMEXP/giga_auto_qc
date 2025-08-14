@@ -56,6 +56,7 @@ def parse_scan_information(metrics: pd.DataFrame) -> pd.DataFrame:
     """
     Parse the identifier into BIDS entities: subject, session, task, run.
     If session and run are not present, the information will not be parsed.
+    Parts of the identifier that do not match are ignored.
 
     Parameters
     ----------
@@ -73,20 +74,37 @@ def parse_scan_information(metrics: pd.DataFrame) -> pd.DataFrame:
     # get all unique entities
     headers_members = set()
     for id in metrics.index:
-        examplar = id.split("_")
-        new_headers = set([e.split("-")[0] for e in examplar])
+        exemplar = id.split("_")
+        new_headers = set(
+            [
+                e.split("-")[0]
+                for e in exemplar
+                if e.split("-")[0] in BIDS_ENTITIES
+            ]
+        )
         headers_members.update(new_headers)
     ordered_header = [None] * len(BIDS_ENTITIES)
     for header in headers_members:
-        ordered_header[BIDS_ENTITIES[header]] = header
+        if header in BIDS_ENTITIES:
+            ordered_header[BIDS_ENTITIES[header]] = header
     headers = [h for h in ordered_header if h is not None]  # remove none
 
     identifiers = pd.DataFrame(
         metrics.index.tolist(), index=metrics.index, columns=["identifier"]
     )
-    identifiers[headers] = identifiers["identifier"].str.split(
-        "_", expand=True
-    )
+    split_data = identifiers["identifier"].str.split("_", expand=True)
+
+    # filter split data to only include columns corresponding to recognised headers
+    split_data = split_data.iloc[
+        :,
+        [
+            i
+            for i, part in enumerate(identifiers["identifier"][0].split("_"))
+            if part.split("-")[0] in BIDS_ENTITIES
+        ],
+    ]
+    identifiers[headers] = split_data
+
     identifiers = identifiers.drop("identifier", axis=1)
     for h in headers:
         identifiers[h] = identifiers[h].str.replace(f"{h}-", "")
