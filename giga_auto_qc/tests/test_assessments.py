@@ -31,6 +31,17 @@ def test_quality_accessments():
     )
     assert metrics["pass_all_qc"].astype(int).sum() == 1
 
+    metrics = assessments.quality_accessments(
+        functional_metrics=functional_metrics,
+        anatomical_metrics=pd.DataFrame(),
+        qulaity_control_standards=qc,
+    )
+    assert (
+        metrics["pass_all_qc"].astype(int).sum()
+        == metrics["pass_func_qc"].astype(int).sum()
+    )
+    assert metrics["pass_anat_qc"].isnull().all() == True
+
 
 def test_dice_coefficient():
     """Check the dice coefficient is calculated correctly."""
