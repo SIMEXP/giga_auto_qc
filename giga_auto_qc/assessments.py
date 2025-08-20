@@ -8,7 +8,7 @@ import pandas as pd
 from nibabel import Nifti1Image
 
 from nilearn.image import load_img, resample_to_img
-from nilearn.masking import intersect_masks, _load_mask_img
+from nilearn.masking import intersect_masks, load_mask_img
 
 from bids import BIDSLayout
 
@@ -169,7 +169,7 @@ def _check_mask_affine(
     header_info = {"affine": []}
     key_to_header = {}
     for this_mask in mask_imgs:
-        _, affine = _load_mask_img(this_mask, allow_empty=True)
+        _, affine = load_mask_img(this_mask, allow_empty=True)
         affine_hashable = str(affine)
         header_info["affine"].append(affine_hashable)
         if affine_hashable not in key_to_header:
@@ -281,6 +281,7 @@ def calculate_functional_metrics(
             "mean_fd_raw": fds_mean_raw,
             "mean_fd_scrubbed": fds_mean_scrub,
             "proportion_kept": proportion_kept,
+            "total_frames": timeseries_length,
         }
 
     func_filter = {
@@ -334,6 +335,12 @@ def calculate_anat_metrics(
     """
     if verbose > 0:
         print("Calculate the anatomical dice score.")
+    # check if the derivative was created with anatomical fast-track
+    check_anat = fmriprep_bids_layout.get(datatype="anat", return_type="file")
+    if not check_anat:
+        print("`anat/` not present in the derivatives. " "Skip anatomical QC.")
+        return pd.DataFrame()
+
     metrics = {}
     for sub in tqdm(subjects):
         anat_filter = {
@@ -397,6 +404,12 @@ def quality_accessments(
         > qulaity_control_standards["functional_dice"]
     )
     functional_metrics["pass_func_qc"] = keep_fd * keep_proportion * keep_func
+    if anatomical_metrics.empty:
+        functional_metrics["pass_anat_qc"] = np.nan
+        functional_metrics["pass_all_qc"] = functional_metrics[
+            "pass_func_qc"
+        ].copy()
+        return functional_metrics
 
     # get the anatomical pass / fail
     pass_anat_qc = {}
